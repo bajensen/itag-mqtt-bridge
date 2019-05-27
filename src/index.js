@@ -15,7 +15,6 @@ if (home_assistant == 0) {
 	const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || 'homeassistant/sensor' //MQTT topic if using HASS
 }
 
-const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || 'homeassistant/sensor'
 const mqtt_url          = process.env.MQTT_URL ||'mqtt://localhost:1883'
 const mqtt_config       = {
                             username: process.env.MQTT_USERNAME || 'user',
