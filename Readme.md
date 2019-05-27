@@ -55,7 +55,8 @@ Note: ITag has some other services and characteristics available, below are list
     - `0x01` -> mild alert (continuous)
     - `0x02` -> high alert (beeping)
 
-Sadly, the devices this project was tested on had no characteristics for battery level.
+# Challenges
+At leat with current hardware (there are different iTag hardware iterations) there is a scenario where NOBLE connects with the TAG but fails to discover and subscribe to characteristics. Currently there is a rough approach to solve this by the UpdateRSSI function, but is a dirty one.  If anyone could help refining this failsafe prodcedure, it would be great.
 
 # Inspired by 
 - [$2 Bluetooth Tags and Tangible UIs for IoT](https://medium.com/@monkeytypewritr/2-bluetooth-tags-and-tangible-uis-for-iot-47599869a7fb)
