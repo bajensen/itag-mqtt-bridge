@@ -3,17 +3,23 @@ const noble = require('noble')
 const log   = require('winston')
 
 const beep_on_itag_connect = process.env.BEEP_ON_ITAG_CONNECT || 'true'
+
 const log_level = process.env.LOG_LEVEL || 'debug'
+
+
 
 const rssi_update_interval = 15000 //in ms
 const double_click_interval = 800 //in ms
 
-const home_assistant = 1 // 0 = disables HASS discovery, 1 = enables HASS discovery
+var home_assistant = 1 // 0 = disables HASS discovery, 1 = enables HASS discovery
+
 if (home_assistant == 0) {
-	const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || 'itag'	 //MQTT topic if not using HASS
+	itag_topic ='itag'	 //MQTT topic if not using HASS
 } else if (home_assistant == 1) {
-	const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || 'homeassistant/sensor' //MQTT topic if using HASS
+	 itag_topic = 'homeassistant/sensor/' //MQTT topic if using HASS
 }
+
+const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || itag_topic
 
 const mqtt_url          = process.env.MQTT_URL ||'mqtt://localhost:1883'
 const mqtt_config       = {
@@ -108,15 +114,14 @@ onITAGButtonClicked = (peripheral) => {
  //   mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button/click`, '1')
 //}
 
-updateRSSI = (peripheral) => {
+updateRSSI = (peripheral) => {
     peripheral.updateRssi(function(error, rssi){
     //rssi are always negative values 
     if(rssi < 0) {
 		var current_time = Date.now();
 		var run_time =((current_time - start_time)/1000)
-		log.info(`iTAG connected id: ${peripheral.id} localName: ${peripheral.advertisement.localName} state: ${peripheral.state} rssi: ${rssi} at ${run_time}`)
-		//log.info(`ITAG peripheral id: ${itag_property[peripheral.id]["Char"]} Test2`)
-		log.info(`ITAG peripheral id: ${buttonCharacteristics} - Battery:${itag_property[peripheral.id]["battery"]}%`)
+		log.debug(`iTAG connected id: ${peripheral.id} localName: ${peripheral.advertisement.localName} state: ${peripheral.state} rssi: ${rssi} at ${run_time}`)
+		log.debug(`ITAG peripheral id: ${buttonCharacteristics} - Battery:${itag_property[peripheral.id]["battery"]}%`)
 		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/rssi`, `${rssi}`)
 		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/presence`, '1')
 		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/battery/level`, `${itag_property[peripheral.id]["battery"]}`)
@@ -136,10 +141,10 @@ onITAGConnected = (peripheral) => {
     setTimeout(()=>{
         peripheral.discoverAllServicesAndCharacteristics((error, services, characteristics)=>{
 			if ( home_assistant == 1) {
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_click/config`, '{"name": "' + peripheral.id + '_click", "state_topic": "homeassistant/sensor/' + peripheral.id + '/button/click"}')
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_rssi/config`, '{"name": "' + peripheral.id + '_rssi", "state_topic": "homeassistant/sensor/' + peripheral.id + '/rssi"}')
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_battery/config`, '{"name": "' + peripheral.id + '_battery", "state_topic": "homeassistant/sensor/' + peripheral.id + '/battery/level"}')
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_presence/config`, '{"name": "' + peripheral.id + '_presence", "state_topic": "homeassistant/sensor/' + peripheral.id + '/presence"}')
+				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_click/config`, '{"name": "' + peripheral.id + '_click", "state_topic": "homeassistant/sensor/' + peripheral.id + '/button/click"}')
+				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_rssi/config`, '{"name": "' + peripheral.id + '_rssi", "state_topic": "homeassistant/sensor/' + peripheral.id + '/rssi"}')
+				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_battery/config`, '{"name": "' + peripheral.id + '_battery", "state_topic": "homeassistant/sensor/' + peripheral.id + '/battery/level"}')
+				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_presence/config`, '{"name": "' + peripheral.id + '_presence", "state_topic": "homeassistant/sensor/' + peripheral.id + '/presence"}')
 			}
             buttonCharacteristics = getITAGCharacteristic(peripheral.id,itag_service_button,itag_characteristic_click)
             buttonCharacteristics.on('data', (data,isNotification) => {
@@ -253,7 +258,6 @@ onMqttMessage = (topic, message) => {
         alertITAGBeep(itagId,parseInt(message.toString()))
         return
     }
-
 }
 
 onMqttConnect = () => { log.info('MQTT connected') }
