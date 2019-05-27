@@ -19,7 +19,9 @@ See this [link](https://github.com/sandeepmistry/noble#running-without-rootsudo)
 
 ## MQTT
 - `itag/<tag uuid>/presence` emits values `1` or `0` if the device is connected or not
-- `itag/<tag uuid>/button/click` emits `1` on button click
+- `itag/<tag uuid>/button/click` emits `1` on button click and `2` on button double-clic
+- `itag/<tag uuid>/rssi` emits the RSSI signal at a configured frecuency
+- `itag/<tag uuid>/battery/level` emits the RSSI battery level at a configured frecuency
 - `itag/<tag uuid>/alert/continuous` on payload: `< miliseconds >`  will perform a continuous piezzo aler for ms duration  
 - `itag/<tag uuid>/alert/beep` on payload: `< miliseconds >` will perform a beeping piezzo aler for ms duration  
 
@@ -28,6 +30,9 @@ See this [link](https://github.com/sandeepmistry/noble#running-without-rootsudo)
 Is done using [environment variales](https://en.wikipedia.org/wiki/Environment_variable`).
 - `BEEP_ON_ITAG_CONNECT` default: `true` -> tag will beep after connecting to your computer
 - `LOG_LEVEL` default: `debug` (see: [winston log levels](https://github.com/winstonjs/winston#logging-levels))
+- `rssi_update_interval` default:`15000` -> Value in ms at which the iTag's RSSI will be updated 
+- `double_click_interval` default:`800` -> Value in ms that sets the threshold for the second click to be read as a double-click action
+- `home_assistant` default:`1` -> Enables or disables HomeAssistant MQTT auto-discovery 
 - `MQTT_BASE_TOPIC` default:`itag` 
 - `MQTT_URL` default: `mqtt://localhost:1883` (see:[mqtt.js format](https://www.npmjs.com/package/mqtt#mqttconnecturl-options))
 - `MQTT_USERNAME` default: `null`
