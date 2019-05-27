@@ -16,7 +16,7 @@ var home_assistant = 1 // 0 = disables HASS discovery, 1 = enables HASS discover
 if (home_assistant == 0) {
 	itag_topic ='itag'	 //MQTT topic if not using HASS
 } else if (home_assistant == 1) {
-	 itag_topic = 'homeassistant/sensor/' //MQTT topic if using HASS
+	 itag_topic = 'homeassistant/sensor' //MQTT topic if using HASS
 }
 
 const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || itag_topic
