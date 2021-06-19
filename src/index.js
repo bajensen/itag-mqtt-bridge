@@ -1,8 +1,6 @@
 const mqtt  = require('mqtt')
-const noble = require('noble')
+const noble = require('@abandonware/noble')
 const log   = require('winston')
-
-const beep_on_itag_connect = process.env.BEEP_ON_ITAG_CONNECT || 'true'
 
 const log_level = process.env.LOG_LEVEL || 'debug'
 
@@ -11,13 +9,7 @@ const log_level = process.env.LOG_LEVEL || 'debug'
 const rssi_update_interval = 15000 //in ms
 const double_click_interval = 800 //in ms
 
-var home_assistant = 1 // 0 = disables HASS discovery, 1 = enables HASS discovery
-
-if (home_assistant == 0) {
-	itag_topic ='itag'	 //MQTT topic if not using HASS
-} else if (home_assistant == 1) {
-	 itag_topic = 'homeassistant/sensor' //MQTT topic if using HASS
-}
+itag_topic = 'itag'
 
 const mqtt_baseTopic    = process.env.MQTT_BASE_TOPIC || itag_topic
 
@@ -61,7 +53,7 @@ getITAGCharacteristic = (id, serviceId, characteristicID) => {
 }
 
 alertITAGBeep = (id, ms) => {
-    log.debug(`ITAG peripheral id: ${id} beep ${ms}`)
+    log.info(`ITAG peripheral id: ${id} beep ${ms}`)
     if(ms < 100 || ms > 600000) return;
     immediateAlertLevelCh = getITAGCharacteristic(peripheral.id,itag_service_immediateAlert,itag_characteristic_alertLevel)
     immediateAlertLevelCh.write(new Buffer([itag_characteristic_alertLevel_value_highAlert]), true, ()=>{
@@ -72,7 +64,7 @@ alertITAGBeep = (id, ms) => {
 }
 
 alertITAGContinous = (id, ms) => {
-    log.debug(`ITAG peripheral id: ${id} continous ${ms}`)
+    log.info(`ITAG peripheral id: ${id} continous ${ms}`)
     if(ms < 100 || ms > 600000) return;
     immediateAlertLevelCh = getITAGCharacteristic(peripheral.id,itag_service_immediateAlert,itag_characteristic_alertLevel)
     immediateAlertLevelCh.write(new Buffer([itag_characteristic_alertLevel_value_mildAlert]), true, () => {
@@ -95,15 +87,15 @@ onITAGButtonClicked = (peripheral) => {
 	if ( itag_property[peripheral.id]["TimeB"] == 0 ) {
 		itag_property[peripheral.id]["TimeB"] = itag_property[peripheral.id]["TimeA"];
 		itag_property[peripheral.id]["click_interval"] = setTimeout(function(){
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button/click`, '1')
-			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button/click`, '0')
+			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, '1')
+			mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, '0')
 			log.info(`iTag id ${peripheral.id} clicked once`)
 			itag_property[peripheral.id]["TimeB"] = 0
 			itag_property[peripheral.id]["click_interval"] = 0
 		}, double_click_interval);
 	} else {
-		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button/click`, '2')
-		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button/click`, '0')
+		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, '2')
+		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, '0')
 		log.info(`iTag id ${peripheral.id} clicked twice - click interval =  ${itag_property[peripheral.id]["Delta"]}`);
 		clearTimeout(itag_property[peripheral.id]["click_interval"]);
 		itag_property[peripheral.id]["TimeB"] = 0;
@@ -124,7 +116,7 @@ updateRSSI = (peripheral) => {
 		log.debug(`ITAG peripheral id: ${buttonCharacteristics} - Battery:${itag_property[peripheral.id]["battery"]}%`)
 		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/rssi`, `${rssi}`)
 		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/presence`, '1')
-		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/battery/level`, `${itag_property[peripheral.id]["battery"]}`)
+		mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/battery`, `${itag_property[peripheral.id]["battery"]}`)
 		if ( itag_property[peripheral.id]["battery"] == null ) {
 			onITAGConnected(peripheral)
 		}
@@ -133,19 +125,13 @@ updateRSSI = (peripheral) => {
 }
 
 onITAGBatteryLevel = (peripheral, data) => {
-    mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/battery/level`, data.readUInt8(0).toString())
+    mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/battery`, data.readUInt8(0).toString())
 }
 
 onITAGConnected = (peripheral) => {
     // 300 ms delay due to ITAG disconnects on immediate service discovery
     setTimeout(()=>{
         peripheral.discoverAllServicesAndCharacteristics((error, services, characteristics)=>{
-			if ( home_assistant == 1) {
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_click/config`, '{"name": "' + peripheral.id + '_click", "state_topic": "homeassistant/sensor/' + peripheral.id + '/button/click"}')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_rssi/config`, '{"name": "' + peripheral.id + '_rssi", "state_topic": "homeassistant/sensor/' + peripheral.id + '/rssi"}')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_battery/config`, '{"name": "' + peripheral.id + '_battery", "state_topic": "homeassistant/sensor/' + peripheral.id + '/battery/level"}')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_presence/config`, '{"name": "' + peripheral.id + '_presence", "state_topic": "homeassistant/sensor/' + peripheral.id + '/presence"}')
-			}
             buttonCharacteristics = getITAGCharacteristic(peripheral.id,itag_service_button,itag_characteristic_click)
             buttonCharacteristics.on('data', (data,isNotification) => {
                 log.info(`ITAG peripheral id: ${peripheral.id} Button Clicked`) 
@@ -169,7 +155,6 @@ onITAGConnected = (peripheral) => {
                 linkLossAlertLevelCh.write(new Buffer([itag_characteristic_alertLevel_value_noAlert]), true, (error)=>{
                     if(error) log.error(error)
                     log.debug(`ITAG peripheral id: ${peripheral.id} LinkLoss AlertLevel write success`)
-                    if(beep_on_itag_connect==='true') alertITAGContinous(peripheral.id,200)
                 });
             }
         })
@@ -197,21 +182,6 @@ connectITAG = (peripheral) => {
     peripheral.once('disconnect', ()=>{		
         log.warn(`NOBLE peripheral id: ${peripheral.id} disconnected`)
 		clearTimeout(itag_property[peripheral.id]["rssi_interval"])
-		if ( home_assistant == 1) {
-			if ( on_disconnect_mqtt_action == 0 ) {
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/presence`, '0')
-			} else if ( on_disconnect_mqtt_action == 1 ) {
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/presence`, '0')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_click/config`, '')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_rssi/config`, '')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_battery/config`, '')
-			} else if ( on_disconnect_mqtt_action == 2 ) {
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_click/config`, '')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_rssi/config`, '')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_battery/config`, '')
-				mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}_presence/config`, '')
-			}
-		}
         mqttClient.unsubscribe([
             `${mqtt_baseTopic}/${peripheral.id}/alert/continuous`,
             `${mqtt_baseTopic}/${peripheral.id}/alert/beep`,
@@ -237,9 +207,13 @@ onNobleScanStop  = () => { log.info('NOBLE scanning stopped'); setTimeout(startS
 onNobleDiscover = (peripheral) =>{
     log.debug(`NOBLE discovered id: ${peripheral.id} localName: ${peripheral.advertisement.localName} state: ${peripheral.state}`)
     var name = String(peripheral.advertisement.localName).trim().toUpperCase()
-    is_itag             = name == 'ITAG'
+    //is_itag             = name == 'ITAG'
+    is_itag = name == 'TAG-IT'
     is_not_connected    = peripheral.state == 'disconnected'
-    if(is_itag && is_not_connected){connectITAG(peripheral)}
+
+    if(is_itag && is_not_connected){
+        connectITAG(peripheral)
+    }
 }
 
 /*
@@ -253,7 +227,7 @@ onMqttMessage = (topic, message) => {
     itagId = topicElements[topicElements.length-3]
     alert = topicElements[topicElements.length-2]
     type = topicElements[topicElements.length-1]
-    if(alert!==alert) return;
+    if(alert!=='alert') return;
     if(type === 'beep'){
         alertITAGBeep(itagId,parseInt(message.toString()))
         return

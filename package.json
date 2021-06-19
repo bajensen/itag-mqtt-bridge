@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "mqtt": "^2.11.0",
-    "noble": "^1.8.1",
+    "@abandonware/noble": "^1.9.2",
     "winston": "^2.3.1"
   }
 }
