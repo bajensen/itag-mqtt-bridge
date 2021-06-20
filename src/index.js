@@ -244,7 +244,7 @@ onMqttMessage = (topic, message) => {
   log.debug("MQTT topic: " + topic + " message: " + message.toString());
   topicElements = topic.split("/");
   if (topicElements.length < 3 || isNaN(message.toString())) return;
-  (tmp, tagId, cmd, type) = topicElements;
+  [tmp, tagId, cmd, type] = topicElements;
   if (cmd !== "alert") return;
   if (type != "beep") return;
   alertITAGBeep(tagId, parseInt(message.toString()));
