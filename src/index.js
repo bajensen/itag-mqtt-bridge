@@ -8,12 +8,17 @@ const rssi_update_interval = 15000; //in ms
 const double_click_interval = 800; //in ms
 
 const tag_device_name = "TAG-IT";
-const mqtt_baseTopic = "itag";
+const mqtt_baseTopic = "ble_tag";
 
 const mqtt_url = process.env.MQTT_URL || "mqtt://localhost:1883";
 const mqtt_config = {
   username: process.env.MQTT_USERNAME || "user",
   password: process.env.MQTT_PASSWORD || "password",
+  will: {
+    topic: `${mqtt_baseTopic}/status`,
+    payload: 'offline',
+    retain: true
+  }
 };
 
 const itag_srv_btn = "ffe0";
@@ -233,6 +238,9 @@ onMqttMessage = (topic, message) => {
 
 onMqttConnect = () => {
   log.info("MQTT connected");
+  mqtt.publish(`${mqtt_baseTopic}/status`, 'online', {
+    retain: true
+  });
 };
 
 log.level = log_level;
