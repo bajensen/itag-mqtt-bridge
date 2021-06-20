@@ -238,7 +238,7 @@ onMqttMessage = (topic, message) => {
 
 onMqttConnect = () => {
   log.info("MQTT connected");
-  mqtt.publish(`${mqtt_baseTopic}/status`, 'online', {
+  mqttClient.publish(`${mqtt_baseTopic}/status`, 'online', {
     retain: true
   });
 };
