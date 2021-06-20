@@ -16,7 +16,7 @@ const mqtt_config = {
   password: process.env.MQTT_PASSWORD || "password",
   will: {
     topic: `${mqtt_baseTopic}/status`,
-    payload: 'offline',
+    payload: 'Offline',
     retain: true
   }
 };
@@ -238,7 +238,7 @@ onMqttMessage = (topic, message) => {
 
 onMqttConnect = () => {
   log.info("MQTT connected");
-  mqttClient.publish(`${mqtt_baseTopic}/status`, 'online', {
+  mqttClient.publish(`${mqtt_baseTopic}/status`, 'Online', {
     retain: true
   });
 };
