@@ -75,8 +75,7 @@ alertITAGContinous = (id, ms) => {
 };
 
 onITAGButtonClicked = (peripheral) => {
-  mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, "1");
-  mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, "0");
+  mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, "pressed");
 };
 
 updateRSSI = (peripheral) => {
