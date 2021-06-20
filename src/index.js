@@ -48,7 +48,7 @@ alertITAGBeep = (id, ms) => {
   log.info(`ITAG peripheral id: ${id} beep ${ms}`);
   if (ms < 100 || ms > 600000) return;
   immediateAlertLevelCh = getITAGCharacteristic(
-    peripheral.id,
+    id,
     itag_srv_alert,
     itag_chr_alertLevel
   );
