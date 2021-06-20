@@ -59,21 +59,6 @@ alertITAGBeep = (id, ms) => {
   });
 };
 
-alertITAGContinous = (id, ms) => {
-  log.info(`ITAG peripheral id: ${id} continous ${ms}`);
-  if (ms < 100 || ms > 600000) return;
-  immediateAlertLevelCh = getITAGCharacteristic(
-    peripheral.id,
-    itag_srv_alert,
-    itag_chr_alertLevel
-  );
-  immediateAlertLevelCh.write(new Buffer([itag_chr_alert_cont]), true, () => {
-    setTimeout(() => {
-      immediateAlertLevelCh.write(new Buffer([itag_chr_alert_off]), true);
-    }, ms);
-  });
-};
-
 onITAGButtonClicked = (peripheral) => {
   mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/button`, "pressed");
 };
@@ -194,8 +179,7 @@ connectITAG = (peripheral) => {
     }, rssi_update_interval);
     mqttClient.publish(`${mqtt_baseTopic}/${peripheral.id}/presence`, "1");
     mqttClient.subscribe([
-      `${mqtt_baseTopic}/${peripheral.id}/alert/continuous`,
-      `${mqtt_baseTopic}/${peripheral.id}/alert/beep`,
+      `${mqtt_baseTopic}/${peripheral.id}/alert`,
     ]);
   });
 
@@ -203,8 +187,7 @@ connectITAG = (peripheral) => {
     log.warn(`NOBLE peripheral id: ${peripheral.id} disconnected`);
     clearTimeout(tags[peripheral.id]["rssi_interval"]);
     mqttClient.unsubscribe([
-      `${mqtt_baseTopic}/${peripheral.id}/alert/continuous`,
-      `${mqtt_baseTopic}/${peripheral.id}/alert/beep`,
+      `${mqtt_baseTopic}/${peripheral.id}/alert`,
     ]);
   });
 };
@@ -243,9 +226,8 @@ onMqttMessage = (topic, message) => {
   log.debug("MQTT topic: " + topic + " message: " + message.toString());
   topicElements = topic.split("/");
   if (topicElements.length < 3 || isNaN(message.toString())) return;
-  [tmp, tagId, cmd, type] = topicElements;
+  [tmp, tagId, cmd] = topicElements;
   if (cmd !== "alert") return;
-  if (type != "beep") return;
   alertITAGBeep(tagId, parseInt(message.toString()));
 };
 
