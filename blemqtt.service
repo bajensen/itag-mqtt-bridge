@@ -1,0 +1,15 @@
+[Unit]
+Description=BLE MQTT Bridge
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+StartLimitIntervalSec=0
+User=root
+ExecStart=/usr/bin/env bash /opt/ble-mqtt-bridge/start.sh
+
+[Install]
+WantedBy=multi-user.target
